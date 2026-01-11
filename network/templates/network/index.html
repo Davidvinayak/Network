@@ -3,6 +3,16 @@
 {% block body %}
 <h2>All Posts</h2>
 
+{% if user.is_authenticated %}
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="content" placeholder="What's on your mind?" rows="3" style="width:100%;"></textarea>
+        <br>
+        <button type="submit">Post</button>
+    </form>
+    <hr>
+{% endif %}
+
 {% for post in posts %}
     <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
         <strong>{{ post.user.username }}</strong><br>
