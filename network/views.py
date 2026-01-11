@@ -1,10 +1,11 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
 
-from .models import User, Post
+from .models import User, Post, Follow
 
 
 def index(request):
@@ -71,3 +72,47 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+
+def profile(request, username):
+    profile_user = get_object_or_404(User, username=username)
+
+    posts = Post.objects.filter(user=profile_user).order_by("-timestamp")
+
+    followers_count = Follow.objects.filter(following=profile_user).count()
+    following_count = Follow.objects.filter(follower=profile_user).count()
+
+    is_following = False
+    if request.user.is_authenticated and request.user != profile_user:
+        is_following = Follow.objects.filter(
+            follower=request.user, following=profile_user
+        ).exists()
+
+    return render(
+        request,
+        "network/profile.html",
+        {
+            "profile_user": profile_user,
+            "posts": posts,
+            "followers_count": followers_count,
+            "following_count": following_count,
+            "is_following": is_following,
+        },
+    )
+
+
+@login_required
+def follow_user(request, username):
+    target_user = get_object_or_404(User, username=username)
+
+    if request.user == target_user:
+        return redirect("profile", username=username)
+
+    follow = Follow.objects.filter(follower=request.user, following=target_user)
+
+    if follow.exists():
+        follow.delete()
+    else:
+        Follow.objects.create(follower=request.user, following=target_user)
+
+    return redirect("profile", username=username)
