@@ -23,7 +23,14 @@
         </div>
 
         <div class="post-actions">
-            ❤️ {{ post.likes.count }} Likes
+            ❤️ <span id="likes-{{ post.id }}">{{ post.likes.count }}</span> Likes
+
+            {% if user.is_authenticated %}
+                · <span style="cursor:pointer; color:#1da1f2;"
+                        onclick="toggleLike({{ post.id }})">
+                    Like
+                  </span>
+            {% endif %}
         </div>
 
     </div>

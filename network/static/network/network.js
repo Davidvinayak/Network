@@ -19,20 +19,29 @@ function savePost(postId) {
 
     fetch(`/posts/${postId}`, {
         method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCSRFToken()
-        },
         body: JSON.stringify({
             content: newContent
-        })
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
     })
     .then(response => response.json())
     .then(result => {
         document.getElementById(`content-${postId}`).innerText = result.content;
+    })
+    .catch(error => {
+        console.error("Error:", error);
     });
 }
 
-function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+function toggleLike(postId) {
+    fetch(`/posts/${postId}/like`)
+    .then(response => response.json())
+    .then(data => {
+        const likeSpan = document.getElementById(`likes-${postId}`);
+        likeSpan.innerText = data.likes_count;
+    })
+    .catch(error => console.error(error));
 }

@@ -138,19 +138,25 @@ def edit_post(request, post_id):
 
     post = get_object_or_404(Post, id=post_id)
 
-    # 🔒 Security check
     if post.user != request.user:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
     data = json.loads(request.body)
-    content = data.get("content", "").strip()
-
-    if not content:
-        return JsonResponse({"error": "Content cannot be empty"}, status=400)
-
-    post.content = content
+    post.content = data.get("content")
     post.save()
 
-    return JsonResponse(
-        {"message": "Post updated successfully", "content": post.content}
-    )
+    return JsonResponse({"content": post.content})
+
+
+@login_required
+def toggle_like(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        liked = False
+    else:
+        post.likes.add(request.user)
+        liked = True
+
+    return JsonResponse({"liked": liked, "likes_count": post.likes.count()})
