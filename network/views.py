@@ -1,10 +1,11 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-
+from django.views.decorators.csrf import csrf_exempt
+import json
 from .models import User, Post, Follow
 
 
@@ -116,3 +117,40 @@ def follow_user(request, username):
         Follow.objects.create(follower=request.user, following=target_user)
 
     return redirect("profile", username=username)
+
+
+@login_required
+def following(request):
+    following_users = Follow.objects.filter(follower=request.user).values_list(
+        "following", flat=True
+    )
+
+    posts = Post.objects.filter(user__in=following_users).order_by("-timestamp")
+
+    return render(request, "network/following.html", {"posts": posts})
+
+
+@csrf_exempt
+@login_required
+def edit_post(request, post_id):
+    if request.method != "PUT":
+        return JsonResponse({"error": "PUT request required."}, status=400)
+
+    post = get_object_or_404(Post, id=post_id)
+
+    # 🔒 Security check
+    if post.user != request.user:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    data = json.loads(request.body)
+    content = data.get("content", "").strip()
+
+    if not content:
+        return JsonResponse({"error": "Content cannot be empty"}, status=400)
+
+    post.content = content
+    post.save()
+
+    return JsonResponse(
+        {"message": "Post updated successfully", "content": post.content}
+    )

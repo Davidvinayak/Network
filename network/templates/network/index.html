@@ -17,13 +17,14 @@
 
 {% for post in posts %}
     <div class="post">
+
         <div class="post-user">
             <a href="{% url 'profile' post.user.username %}">
                 {{ post.user.username }}
             </a>
         </div>
 
-        <div class="post-content">
+        <div class="post-content" id="content-{{ post.id }}">
             {{ post.content }}
         </div>
 
@@ -33,7 +34,15 @@
 
         <div class="post-actions">
             ❤️ {{ post.likes.count }} Likes
+
+            {% if user == post.user %}
+                · <span style="cursor:pointer; color:#1da1f2;"
+                        onclick="editPost({{ post.id }})">
+                    Edit
+                  </span>
+            {% endif %}
         </div>
+
     </div>
 {% empty %}
     <p>No posts yet.</p>
